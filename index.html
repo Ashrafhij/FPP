@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight & Hotel Deal Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Flight & Hotel Deal Tracker</h1>
+            <p class="subtitle">Set your alerts and get notified when prices drop</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="flights">Flights</button>
+            <button class="tab" data-tab="alerts">My Alerts</button>
+        </div>
+
+        <div id="flights-tab" class="tab-content active">
+            <form id="flight-form" class="card">
+                <h2>Search Flights</h2>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="origin">From (City or IATA code)</label>
+                        <input type="text" id="origin" placeholder="e.g. London, LHR" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="destination">To (City or IATA code)</label>
+                        <input type="text" id="destination" placeholder="e.g. Tokyo, TYO" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="depart-date">Depart Date</label>
+                        <input type="date" id="depart-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="max-price">Max Price ($)</label>
+                        <input type="number" id="max-price" placeholder="e.g. 500" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="check-interval">Check Every</label>
+                        <select id="check-interval">
+                            <option value="3600000">1 Hour</option>
+                            <option value="21600000">6 Hours</option>
+                            <option value="43200000" selected>12 Hours</option>
+                            <option value="86400000">24 Hours</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary">Add Alert</button>
+            </form>
+
+            <div class="card api-note">
+                <h3>How It Works</h3>
+                <p>This app scrapes Google Flights for real prices. Run the backend server first:</p>
+                <code>npm install && npm start</code>
+                <p style="margin-top:8px">Then open <a href="http://localhost:3000" target="_blank">localhost:3000</a></p>
+            </div>
+        </div>
+
+        <div id="alerts-tab" class="tab-content">
+            <div id="alerts-list" class="alerts-list">
+                <p class="empty-state">No alerts yet. Add one from the Flights tab!</p>
+            </div>
+            <button id="check-now" class="btn-primary" style="margin-top:16px;width:100%">Check All Alerts Now</button>
+        </div>
+
+        <div id="notification-toast" class="toast hidden"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
