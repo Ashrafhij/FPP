@@ -32,10 +32,16 @@ const app = {
     setupAutocomplete(inputId) {
         const input = document.getElementById(inputId);
         let dropdown = null;
+        let skipNext = false;
 
         input.addEventListener('input', async () => {
+            if (skipNext) {
+                skipNext = false;
+                return;
+            }
+
             const val = input.value.trim();
-            if (dropdown) dropdown.remove();
+            if (dropdown) { dropdown.remove(); dropdown = null; }
             if (val.length < 1) return;
 
             try {
@@ -50,11 +56,12 @@ const app = {
                     const item = document.createElement('div');
                     item.className = 'autocomplete-item';
                     item.innerHTML = `<span class="ac-code">${a.code}</span> <span class="ac-city">${a.city}</span> <span class="ac-name">${a.name}, ${a.country}</span>`;
-                    item.addEventListener('click', () => {
+                    item.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        skipNext = true;
                         input.value = a.code;
                         input.dataset.city = a.city;
-                        dropdown.remove();
-                        dropdown = null;
+                        if (dropdown) { dropdown.remove(); dropdown = null; }
                     });
                     dropdown.appendChild(item);
                 });
