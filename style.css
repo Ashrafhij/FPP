@@ -349,6 +349,57 @@ header h1 {
     font-size: 11px;
 }
 
+.autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    margin-top: 4px;
+    max-height: 240px;
+    overflow-y: auto;
+    z-index: 100;
+}
+
+.autocomplete-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 14px;
+    border-bottom: 1px solid #0f172a;
+}
+
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.autocomplete-item:hover {
+    background: #334155;
+}
+
+.ac-code {
+    background: #38bdf8;
+    color: #0f172a;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.ac-city {
+    color: #e2e8f0;
+    font-weight: 500;
+}
+
+.ac-name {
+    color: #64748b;
+    font-size: 12px;
+}
+
 .toast {
     position: fixed;
     bottom: 24px;

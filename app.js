@@ -5,6 +5,7 @@ const app = {
     alerts: [],
     timers: {},
     lastSearch: null,
+    activeAutocomplete: null,
 
     init() {
         this.alerts = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -13,6 +14,8 @@ const app = {
         this.restoreTimers();
         this.requestNotificationPermission();
         this.setDefaultDates();
+        this.setupAutocomplete('search-origin');
+        this.setupAutocomplete('search-destination');
     },
 
     setDefaultDates() {
@@ -24,6 +27,51 @@ const app = {
 
     formatDate(d) {
         return d.toISOString().split('T')[0];
+    },
+
+    setupAutocomplete(inputId) {
+        const input = document.getElementById(inputId);
+        let dropdown = null;
+
+        input.addEventListener('input', async () => {
+            const val = input.value.trim();
+            if (dropdown) dropdown.remove();
+            if (val.length < 1) return;
+
+            try {
+                const res = await fetch(`${API_URL}/api/airports?q=${encodeURIComponent(val)}`);
+                const airports = await res.json();
+                if (airports.length === 0) return;
+
+                dropdown = document.createElement('div');
+                dropdown.className = 'autocomplete-dropdown';
+
+                airports.forEach(a => {
+                    const item = document.createElement('div');
+                    item.className = 'autocomplete-item';
+                    item.innerHTML = `<span class="ac-code">${a.code}</span> <span class="ac-city">${a.city}</span> <span class="ac-name">${a.name}, ${a.country}</span>`;
+                    item.addEventListener('click', () => {
+                        input.value = a.code;
+                        input.dataset.city = a.city;
+                        dropdown.remove();
+                        dropdown = null;
+                    });
+                    dropdown.appendChild(item);
+                });
+
+                input.parentNode.style.position = 'relative';
+                input.parentNode.appendChild(dropdown);
+            } catch (err) {
+                console.error('Autocomplete error:', err);
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (dropdown && !input.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.remove();
+                dropdown = null;
+            }
+        });
     },
 
     bindEvents() {
