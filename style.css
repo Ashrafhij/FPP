@@ -262,6 +262,93 @@ header h1 {
     padding: 40px;
 }
 
+.btn-group {
+    display: flex;
+    align-items: flex-end;
+}
+
+.hidden {
+    display: none;
+}
+
+.results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.results-header h2 {
+    font-size: 18px;
+}
+
+.results-summary {
+    display: flex;
+    gap: 24px;
+    padding: 12px 16px;
+    background: #1e293b;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    color: #94a3b8;
+}
+
+.results-summary strong {
+    color: #e2e8f0;
+}
+
+.results-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.flight-card {
+    background: #1e293b;
+    border-radius: 10px;
+    padding: 14px 16px;
+    transition: border-color 0.2s;
+    border: 1px solid transparent;
+}
+
+.flight-card:hover {
+    border-color: #38bdf8;
+}
+
+.flight-main {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.flight-price {
+    font-size: 20px;
+    font-weight: 700;
+    color: #22c55e;
+    min-width: 80px;
+}
+
+.flight-details {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+.flight-airline {
+    color: #e2e8f0;
+    font-weight: 500;
+}
+
+.flight-stops {
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #334155;
+    font-size: 11px;
+}
+
 .toast {
     position: fixed;
     bottom: 24px;

@@ -10,54 +10,47 @@
     <div class="container">
         <header>
             <h1>Flight & Hotel Deal Tracker</h1>
-            <p class="subtitle">Set your alerts and get notified when prices drop</p>
+            <p class="subtitle">Search flights and get notified when prices drop</p>
         </header>
 
         <div class="tabs">
-            <button class="tab active" data-tab="flights">Flights</button>
+            <button class="tab active" data-tab="search">Search</button>
             <button class="tab" data-tab="alerts">My Alerts</button>
         </div>
 
-        <div id="flights-tab" class="tab-content active">
-            <form id="flight-form" class="card">
+        <div id="search-tab" class="tab-content active">
+            <form id="search-form" class="card">
                 <h2>Search Flights</h2>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="origin">From (City or IATA code)</label>
-                        <input type="text" id="origin" placeholder="e.g. London, LHR" required>
+                        <label for="search-origin">From</label>
+                        <input type="text" id="search-origin" placeholder="e.g. LHR" required>
                     </div>
                     <div class="form-group">
-                        <label for="destination">To (City or IATA code)</label>
-                        <input type="text" id="destination" placeholder="e.g. Tokyo, TYO" required>
+                        <label for="search-destination">To</label>
+                        <input type="text" id="search-destination" placeholder="e.g. NRT" required>
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="depart-date">Depart Date</label>
-                        <input type="date" id="depart-date" required>
+                        <label for="search-date">Date</label>
+                        <input type="date" id="search-date" required>
                     </div>
-                    <div class="form-group">
-                        <label for="max-price">Max Price ($)</label>
-                        <input type="number" id="max-price" placeholder="e.g. 500" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="check-interval">Check Every</label>
-                        <select id="check-interval">
-                            <option value="3600000">1 Hour</option>
-                            <option value="21600000">6 Hours</option>
-                            <option value="43200000" selected>12 Hours</option>
-                            <option value="86400000">24 Hours</option>
-                        </select>
+                    <div class="form-group btn-group">
+                        <button type="submit" class="btn-primary" id="search-btn">Search Flights</button>
                     </div>
                 </div>
-
-                <button type="submit" class="btn-primary">Add Alert</button>
             </form>
+
+            <div id="search-results" class="hidden">
+                <div class="results-header">
+                    <h2 id="results-title">Results</h2>
+                    <button id="create-alert-btn" class="btn-secondary">Create Alert for This Route</button>
+                </div>
+                <div id="results-list" class="results-list"></div>
+            </div>
 
             <div class="card api-note">
                 <h3>How It Works</h3>
@@ -65,7 +58,7 @@
                 <ol style="margin:12px 0;padding-left:20px;line-height:1.8">
                     <li>Push code to GitHub</li>
                     <li>Sign up at <a href="https://render.com" target="_blank">render.com</a></li>
-                    <li>Create New Web Service → Connect your repo</li>
+                    <li>Create New Web Service &rarr; Connect your repo</li>
                     <li>Deploy automatically (2-3 min)</li>
                 </ol>
                 <p>Or run locally:</p>
@@ -76,7 +69,7 @@
 
         <div id="alerts-tab" class="tab-content">
             <div id="alerts-list" class="alerts-list">
-                <p class="empty-state">No alerts yet. Add one from the Flights tab!</p>
+                <p class="empty-state">No alerts yet. Search for a flight first!</p>
             </div>
             <button id="check-now" class="btn-primary" style="margin-top:16px;width:100%">Check All Alerts Now</button>
         </div>

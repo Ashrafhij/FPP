@@ -4,6 +4,7 @@ const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:300
 const app = {
     alerts: [],
     timers: {},
+    lastSearch: null,
 
     init() {
         this.alerts = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -18,7 +19,7 @@ const app = {
         const today = new Date();
         const nextWeek = new Date(today);
         nextWeek.setDate(today.getDate() + 7);
-        document.getElementById('depart-date').value = this.formatDate(nextWeek);
+        document.getElementById('search-date').value = this.formatDate(nextWeek);
     },
 
     formatDate(d) {
@@ -30,9 +31,13 @@ const app = {
             tab.addEventListener('click', () => this.switchTab(tab.dataset.tab));
         });
 
-        document.getElementById('flight-form').addEventListener('submit', (e) => {
+        document.getElementById('search-form').addEventListener('submit', (e) => {
             e.preventDefault();
-            this.addAlert();
+            this.searchFlights();
+        });
+
+        document.getElementById('create-alert-btn').addEventListener('click', () => {
+            this.createFromSearch();
         });
 
         document.getElementById('check-now').addEventListener('click', () => {
@@ -53,14 +58,86 @@ const app = {
         }
     },
 
-    addAlert() {
+    async searchFlights() {
+        const origin = document.getElementById('search-origin').value.toUpperCase();
+        const destination = document.getElementById('search-destination').value.toUpperCase();
+        const date = document.getElementById('search-date').value;
+
+        const btn = document.getElementById('search-btn');
+        btn.disabled = true;
+        btn.textContent = 'Searching...';
+
+        try {
+            const res = await fetch(`${API_URL}/api/search`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ origin, destination, date })
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Server error');
+            }
+
+            const data = await res.json();
+            this.lastSearch = { origin, destination, date };
+            this.renderResults(data, origin, destination, date);
+        } catch (err) {
+            this.showToast(`Search failed: ${err.message}`, true);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Search Flights';
+        }
+    },
+
+    renderResults(data, origin, destination, date) {
+        const container = document.getElementById('search-results');
+        const list = document.getElementById('results-list');
+        const title = document.getElementById('results-title');
+
+        container.classList.remove('hidden');
+        title.textContent = `${origin} → ${destination} | ${date}`;
+
+        if (data.flights.length === 0) {
+            list.innerHTML = '<p class="empty-state">No flights found. Try different dates or airports.</p>';
+            return;
+        }
+
+        list.innerHTML = `
+            <div class="results-summary">
+                <span>Cheapest: <strong>$${data.cheapest}</strong></span>
+                <span>Average: <strong>$${data.average}</strong></span>
+                <span>Found: <strong>${data.total}</strong> flights</span>
+            </div>
+            ${data.flights.map(f => `
+                <div class="flight-card">
+                    <div class="flight-main">
+                        <div class="flight-price">$${f.price}</div>
+                        <div class="flight-details">
+                            ${f.airline ? `<span class="flight-airline">${f.airline}</span>` : ''}
+                            ${f.times ? `<span class="flight-times">${f.times}</span>` : ''}
+                            ${f.duration ? `<span class="flight-duration">${f.duration}</span>` : ''}
+                            ${f.stops ? `<span class="flight-stops">${f.stops}</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
+        `;
+    },
+
+    createFromSearch() {
+        if (!this.lastSearch) return;
+
+        const maxPrice = prompt('Set max price for alert ($):');
+        if (!maxPrice || isNaN(maxPrice)) return;
+
         const alert = {
             id: Date.now(),
-            origin: document.getElementById('origin').value.toUpperCase(),
-            destination: document.getElementById('destination').value.toUpperCase(),
-            departDate: document.getElementById('depart-date').value,
-            maxPrice: parseFloat(document.getElementById('max-price').value),
-            interval: parseInt(document.getElementById('check-interval').value),
+            origin: this.lastSearch.origin,
+            destination: this.lastSearch.destination,
+            departDate: this.lastSearch.date,
+            maxPrice: parseFloat(maxPrice),
+            interval: 43200000,
             lastPrice: null,
             lastChecked: null,
             status: 'active',
@@ -71,9 +148,8 @@ const app = {
         this.saveAlerts();
         this.startTimer(alert);
         this.renderAlerts();
-        document.getElementById('flight-form').reset();
-        this.setDefaultDates();
-        this.showToast(`Alert added: ${alert.origin} → ${alert.destination}`);
+        this.showToast(`Alert created: ${alert.origin} → ${alert.destination}`);
+        this.switchTab('alerts');
     },
 
     saveAlerts() {
@@ -99,16 +175,27 @@ const app = {
         this.renderAlerts();
 
         try {
-            const result = await this.fetchPrice(alert);
+            const res = await fetch(`${API_URL}/api/search`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    origin: alert.origin,
+                    destination: alert.destination,
+                    date: alert.departDate
+                })
+            });
 
-            if (result !== null) {
-                alert.lastPrice = result.cheapest;
+            if (!res.ok) throw new Error('Server error');
+
+            const data = await res.json();
+
+            if (data.flights && data.flights.length > 0) {
+                alert.lastPrice = data.cheapest;
                 alert.lastChecked = new Date().toISOString();
-                alert.prices = result.prices;
-                alert.total = result.total;
+                alert.total = data.total;
 
-                if (result.cheapest <= alert.maxPrice) {
-                    this.sendNotification(alert, result);
+                if (data.cheapest <= alert.maxPrice) {
+                    this.sendNotification(alert, data);
                     this.updateStatus(id, 'deal');
                 } else {
                     this.updateStatus(id, 'active');
@@ -120,32 +207,12 @@ const app = {
         } catch (err) {
             console.error('Check failed:', err);
             this.updateStatus(id, 'error');
-            this.showToast(`Error: ${err.message}`, true);
         }
     },
 
-    async fetchPrice(alert) {
-        const res = await fetch(`${API_URL}/api/search`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                origin: alert.origin,
-                destination: alert.destination,
-                date: alert.departDate
-            })
-        });
-
-        if (!res.ok) {
-            const data = await res.json();
-            throw new Error(data.error || 'Server error');
-        }
-
-        return await res.json();
-    },
-
-    sendNotification(alert, result) {
+    sendNotification(alert, data) {
         const title = `Deal Found! ${alert.origin} → ${alert.destination}`;
-        const body = `Cheapest: $${result.cheapest} (avg: $${result.average}) - ${result.total} flights found`;
+        const body = `Cheapest: $${data.cheapest} (your max: $${alert.maxPrice})`;
 
         if ('Notification' in window && Notification.permission === 'granted') {
             new Notification(title, {
@@ -154,7 +221,7 @@ const app = {
             });
         }
 
-        this.showToast(`Deal: ${alert.origin}→${alert.destination} at $${result.cheapest}!`);
+        this.showToast(`Deal: ${alert.origin}→${alert.destination} at $${data.cheapest}!`);
     },
 
     updateStatus(id, status) {
@@ -180,7 +247,7 @@ const app = {
         const container = document.getElementById('alerts-list');
 
         if (this.alerts.length === 0) {
-            container.innerHTML = '<p class="empty-state">No alerts yet. Add one from the Flights tab!</p>';
+            container.innerHTML = '<p class="empty-state">No alerts yet. Search for a flight first!</p>';
             return;
         }
 
@@ -191,7 +258,7 @@ const app = {
                     <p>${alert.departDate} | Max: $${alert.maxPrice}</p>
                     ${alert.lastPrice !== null ? `<p class="alert-price">$${alert.lastPrice}</p>` : ''}
                     ${alert.total ? `<p>${alert.total} flights found</p>` : ''}
-                    ${alert.lastChecked ? `<p class="alert-status-text">Last checked: ${new Date(alert.lastChecked).toLocaleString()}</p>` : ''}
+                    ${alert.lastChecked ? `<p>Last checked: ${new Date(alert.lastChecked).toLocaleString()}</p>` : ''}
                 </div>
                 <div class="alert-actions">
                     <span class="alert-status ${alert.status === 'checking' ? 'checking' : ''}">${alert.status}</span>
